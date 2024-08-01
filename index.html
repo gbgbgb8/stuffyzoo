@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stuffy Zoo Ticketing</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #4a4a4a;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #qrcode {
+            margin-top: 20px;
+        }
+        #scanner {
+            width: 100%;
+            max-width: 300px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="main">
+        <h1>Welcome to Stuffy Zoo!</h1>
+        <button onclick="showEmployeeScreen()">Zoo Employee</button>
+        <button onclick="showVisitorScreen()">Zoo Visitor</button>
+    </div>
+
+    <script>
+        function showEmployeeScreen() {
+            document.getElementById('main').innerHTML = `
+                <h1>Zoo Employee</h1>
+                <input type="password" id="pin" placeholder="Enter PIN">
+                <button onclick="validatePin()">Submit</button>
+            `;
+        }
+
+        function validatePin() {
+            const pin = document.getElementById('pin').value;
+            if (pin === '1234') {
+                document.getElementById('main').innerHTML = `
+                    <h1>Scan Visitor QR Code</h1>
+                    <div id="scanner"></div>
+                `;
+                loadQrScanner();
+            } else {
+                alert('Invalid PIN');
+            }
+        }
+
+        function loadQrScanner() {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qr-scanner/1.4.2/qr-scanner.umd.min.js';
+            script.onload = startScanner;
+            script.onerror = () => alert('Failed to load QR scanner. Please check your internet connection and try again.');
+            document.body.appendChild(script);
+        }
+
+        function startScanner() {
+            if (typeof QrScanner === 'undefined') {
+                alert('QR scanner failed to load. Please refresh the page and try again.');
+                return;
+            }
+
+            const videoElem = document.createElement('video');
+            document.getElementById('scanner').appendChild(videoElem);
+
+            const scanner = new QrScanner(
+                videoElem,
+                result => {
+                    alert(`Visitor donated: $${result.data}`);
+                    scanner.stop();
+                    showEmployeeScreen();
+                },
+                { highlightScanRegion: true }
+            );
+
+            scanner.start().catch(err => {
+                console.error('Failed to start scanner:', err);
+                alert('Failed to start camera. Please ensure you have given camera permissions and try again.');
+            });
+        }
+
+        function showVisitorScreen() {
+            document.getElementById('main').innerHTML = `
+                <h1>Zoo Visitor</h1>
+                <h2>Choose your donation:</h2>
+                <button onclick="generateQR(5)">$5</button>
+                <button onclick="generateQR(25)">$25</button>
+                <button onclick="generateQR(100)">$100</button>
+                <div id="qrcode"></div>
+            `;
+        }
+
+        function generateQR(amount) {
+            const qr = qrcode(0, 'L');
+            qr.addData(amount.toString());
+            qr.make();
+            document.getElementById('qrcode').innerHTML = qr.createImgTag(5);
+        }
+    </script>
+</body>
+</html>
